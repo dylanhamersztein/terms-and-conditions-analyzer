@@ -4,7 +4,7 @@ A browser extension that uses AI to automatically find, analyze, and summarize T
 
 ## Features
 
-- 🔍 **Automatic T&C Detection**: Finds Terms and Conditions links on any webpage
+- 🔍 **Automatic T&C Detection**: Searches the current page for Terms and Conditions text (in modals, dialogs, or page content)
 - 🤖 **AI-Powered Analysis**: Uses OpenAI to analyze T&C documents
 - 📊 **Trustworthiness Score**: Get a score from 1-100 on how trustworthy the T&C are
 - 📝 **Easy-to-Read Summary**: Condenses lengthy T&C into brief summaries
@@ -51,12 +51,12 @@ To get an OpenAI API key:
 
 ## Usage
 
-1. Navigate to any website that has Terms and Conditions
+1. Navigate to any website that displays Terms and Conditions (in a modal, dialog, or on the page itself)
 2. Click the extension icon in your browser toolbar
 3. Click the "Analyze Terms and Conditions" button
 4. Wait while the extension:
-   - Finds the T&C link on the page
-   - Fetches the T&C content
+   - Searches the current page for T&C text
+   - Extracts the content from modals, dialogs, or page elements
    - Sends it to OpenAI for analysis
 5. View the results:
    - **Trustworthiness Score**: A rating from 1-100
@@ -84,25 +84,28 @@ terms-and-conditions-analyzer/
 
 The extension requires the following permissions:
 - `activeTab`: To access the current webpage
-- `scripting`: To inject the content script that finds T&C links
+- `scripting`: To inject the content script that extracts T&C text
 - `https://api.openai.com/*`: To call the OpenAI API
-- `<all_urls>`: To fetch T&C content from any website
+- `<all_urls>`: To access content on any website (required for reading page content)
 
 ### How It Works
 
 1. **Content Script Injection**: When you click analyze, `content.js` is injected into the active tab
-2. **Link Detection**: The script searches for links containing keywords like "Terms of Service", "Terms and Conditions", etc.
-3. **Content Fetching**: The extension fetches the HTML content of the T&C page
-4. **Text Extraction**: HTML is converted to plain text for analysis
-5. **AI Analysis**: Text is sent to OpenAI's GPT-3.5-turbo model with a structured prompt
-6. **Result Display**: The JSON response from OpenAI is parsed and displayed in the popup
+2. **Text Detection**: The script searches the DOM for T&C content using:
+   - Modals and dialogs (highest priority)
+   - Elements with T&C-related IDs/classes
+   - Main content areas containing T&C keywords
+   - Relevance scoring based on keywords and content length
+3. **Text Extraction**: The extension extracts the text content directly from the page
+4. **AI Analysis**: Text is sent to OpenAI's GPT-3.5-turbo model with a structured prompt
+5. **Result Display**: The JSON response from OpenAI is parsed and displayed in the popup
 
 ### Limitations
 
-- **CORS**: Some websites may block fetching their T&C pages due to CORS policies
+- **Content Detection**: Works best when T&C text is directly visible on the page or in modals
 - **Token Limits**: Very long T&C documents are truncated to ~12,000 characters
 - **API Costs**: Each analysis uses OpenAI API credits
-- **Detection Accuracy**: May not find T&C links if they're not in standard formats
+- **Detection Accuracy**: May not detect T&C if they're not displayed using standard patterns or keywords
 
 ## Privacy
 

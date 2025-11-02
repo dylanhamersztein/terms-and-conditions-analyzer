@@ -77,9 +77,9 @@ function getRatingClass(rating) {
 // ============================================
 
 /**
- * Find T&C link on the current page
+ * Find T&C text on the current page
  */
-async function findTCLink() {
+async function findTCText() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   
   try {
@@ -95,32 +95,6 @@ async function findTCLink() {
   } catch (error) {
     console.error('Error executing content script:', error);
     throw new Error('Could not access the current page. Please make sure you have permission to view this page.');
-  }
-}
-
-/**
- * Fetch the T&C page content
- */
-async function fetchTCContent(url) {
-  try {
-    // Basic URL validation
-    const parsedUrl = new URL(url);
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      throw new Error('Invalid URL protocol. Only HTTP and HTTPS are supported.');
-    }
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch T&C page: ${response.status} ${response.statusText}`);
-    }
-    const html = await response.text();
-    return htmlToPlainText(html);
-  } catch (error) {
-    console.error('Error fetching T&C content:', error);
-    if (error.message.includes('Invalid URL')) {
-      throw error;
-    }
-    throw new Error('Could not fetch Terms and Conditions page. It may be blocked by CORS policy.');
   }
 }
 
@@ -269,26 +243,30 @@ async function analyzeTermsAndConditions() {
   try {
     showLoading();
     
-    // Step 1: Find T&C link
-    const tcLink = await findTCLink();
-    if (!tcLink) {
-      showError('Could not find Terms and Conditions link on this page. Please navigate to a page that contains a link to Terms and Conditions.');
+    // Step 1: Find T&C text on current page
+    const tcData = await findTCText();
+    if (!tcData || !tcData.text) {
+      showError('Could not find Terms and Conditions text on this page. Please navigate to a page that displays Terms and Conditions (e.g., in a modal or on the page itself).');
       return;
     }
     
-    console.log('Found T&C link:', tcLink);
+    console.log('Found T&C text:', {
+      source: tcData.source,
+      elementType: tcData.elementType,
+      score: tcData.score,
+      length: tcData.text.length
+    });
     
-    // Step 2: Fetch T&C content
-    const tcContent = await fetchTCContent(tcLink);
-    if (!tcContent || tcContent.trim().length < 100) {
-      showError('Could not extract meaningful content from Terms and Conditions page.');
+    // Step 2: Validate content
+    if (tcData.text.trim().length < 100) {
+      showError('Could not extract meaningful Terms and Conditions content from this page.');
       return;
     }
     
-    console.log('Fetched T&C content, length:', tcContent.length);
+    console.log('T&C content length:', tcData.text.length);
     
     // Step 3: Analyze with AI
-    const results = await analyzeWithAI(tcContent);
+    const results = await analyzeWithAI(tcData.text);
     
     console.log('AI analysis results:', results);
     
