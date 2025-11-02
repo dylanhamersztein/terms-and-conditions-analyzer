@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "AI T&C Analyzer",
+  "version": "1.0.0",
+  "description": "Automatically find and analyze Terms and Conditions using AI to provide summaries and trustworthiness ratings",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://api.openai.com/*",
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

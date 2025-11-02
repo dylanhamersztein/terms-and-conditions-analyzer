@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI T&C Analyzer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AI T&C Analyzer</h1>
+      <p class="subtitle">Analyze Terms and Conditions with AI</p>
+    </header>
+    
+    <main>
+      <button id="analyze-btn" class="analyze-button">
+        Analyze Terms and Conditions
+      </button>
+      
+      <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Analyzing Terms and Conditions...</p>
+      </div>
+      
+      <div id="error" class="error" style="display: none;"></div>
+      
+      <div id="results" class="results" style="display: none;">
+        <section class="result-section">
+          <h2>Trustworthiness Score</h2>
+          <div id="score-content" class="score-display"></div>
+        </section>
+        
+        <section class="result-section">
+          <h2>Summary</h2>
+          <div id="summary-content" class="summary-text"></div>
+        </section>
+        
+        <section class="result-section">
+          <h2>Detailed Analysis</h2>
+          <div id="analysis-content" class="analysis-list"></div>
+        </section>
+      </div>
+    </main>
+    
+    <footer>
+      <p class="footer-text">Powered by OpenAI</p>
+    </footer>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
