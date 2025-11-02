@@ -2,6 +2,8 @@
 // CONFIGURATION
 // ============================================
 // TODO: Replace with your own OpenAI API key
+// NOTE: For production use, consider implementing secure storage using chrome.storage.sync
+// to allow users to input their API key through the extension's settings UI
 const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE';
 const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
@@ -101,6 +103,12 @@ async function findTCLink() {
  */
 async function fetchTCContent(url) {
   try {
+    // Basic URL validation
+    const parsedUrl = new URL(url);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new Error('Invalid URL protocol. Only HTTP and HTTPS are supported.');
+    }
+    
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch T&C page: ${response.status} ${response.statusText}`);
@@ -109,6 +117,9 @@ async function fetchTCContent(url) {
     return htmlToPlainText(html);
   } catch (error) {
     console.error('Error fetching T&C content:', error);
+    if (error.message.includes('Invalid URL')) {
+      throw error;
+    }
     throw new Error('Could not fetch Terms and Conditions page. It may be blocked by CORS policy.');
   }
 }
@@ -123,7 +134,8 @@ async function analyzeWithAI(tcText) {
   }
   
   // Truncate text if too long (OpenAI has token limits)
-  const maxLength = 12000; // Approximately 3000 tokens
+  // Note: This is a rough approximation. Actual token count varies based on content.
+  const maxLength = 12000; // Approximately 3000-4000 tokens depending on complexity
   const truncatedText = tcText.length > maxLength ? tcText.substring(0, maxLength) + '...' : tcText;
   
   const prompt = `You are analyzing Terms and Conditions text. Please analyze the following Terms and Conditions and provide your response in STRICT JSON format.
@@ -227,15 +239,24 @@ function displayResults(results) {
   `;
   scoreContent.innerHTML = scoreHtml;
   
-  // Display summary
+  // Display summary - use textContent to prevent XSS
   summaryContent.textContent = results.summary;
   
-  // Display analysis
+  // Display analysis - sanitize by using textContent for each item
   if (results.analysis && results.analysis.length > 0) {
-    const analysisList = results.analysis.map(item => `<li>${item}</li>`).join('');
-    analysisContent.innerHTML = `<ul>${analysisList}</ul>`;
+    const ul = document.createElement('ul');
+    results.analysis.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item; // Safe: uses textContent instead of innerHTML
+      ul.appendChild(li);
+    });
+    analysisContent.innerHTML = ''; // Clear previous content
+    analysisContent.appendChild(ul);
   } else {
-    analysisContent.innerHTML = '<p>No concerning clauses found. This appears to be a fair agreement.</p>';
+    const p = document.createElement('p');
+    p.textContent = 'No concerning clauses found. This appears to be a fair agreement.';
+    analysisContent.innerHTML = ''; // Clear previous content
+    analysisContent.appendChild(p);
   }
   
   showResults();

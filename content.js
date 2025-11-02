@@ -19,14 +19,7 @@
   // Function to check if a link matches any keywords
   function matchesKeywords(text, keywords) {
     const lowerText = text.toLowerCase().trim();
-    return keywords.some(keyword => {
-      // Check for exact match or match as a separate word
-      return lowerText === keyword || 
-             lowerText.includes(keyword) && 
-             (lowerText.startsWith(keyword + ' ') || 
-              lowerText.endsWith(' ' + keyword) ||
-              lowerText === keyword);
-    });
+    return keywords.some(keyword => lowerText.includes(keyword));
   }
   
   // Get all links on the page
