@@ -13,7 +13,29 @@
       <p class="subtitle">Analyze Terms and Conditions with AI</p>
     </header>
     
-    <main>
+    <!-- API Key Setup Screen -->
+    <div id="setup-screen" class="setup-screen" style="display: none;">
+      <div class="setup-content">
+        <h2>Welcome!</h2>
+        <p class="setup-text">To use this extension, you need to provide your OpenAI API key.</p>
+        <p class="setup-text small">Your API key will be stored securely in your browser and never shared.</p>
+        
+        <div class="input-group">
+          <label for="api-key-input">OpenAI API Key:</label>
+          <input type="password" id="api-key-input" placeholder="sk-..." class="api-key-input">
+          <button id="show-key-btn" class="show-key-btn" type="button">👁️</button>
+        </div>
+        
+        <button id="save-key-btn" class="save-button">Save API Key</button>
+        
+        <div class="help-text">
+          <p>Don't have an API key? <a href="https://platform.openai.com/api-keys" target="_blank">Get one here</a></p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Analysis Screen -->
+    <main id="main-screen">
       <button id="analyze-btn" class="analyze-button">
         Analyze Terms and Conditions
       </button>
@@ -40,6 +62,10 @@
           <h2>Detailed Analysis</h2>
           <div id="analysis-content" class="analysis-list"></div>
         </section>
+      </div>
+      
+      <div class="settings-link">
+        <button id="change-key-btn" class="text-button">Change API Key</button>
       </div>
     </main>
     

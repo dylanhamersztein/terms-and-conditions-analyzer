@@ -217,3 +217,140 @@ footer {
   font-size: 11px;
   color: #999;
 }
+
+/* Setup Screen Styles */
+.setup-screen {
+  padding: 20px;
+  flex: 1;
+}
+
+.setup-content {
+  text-align: center;
+}
+
+.setup-content h2 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 22px;
+}
+
+.setup-text {
+  color: #666;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.setup-text.small {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.api-key-input {
+  width: 100%;
+  padding: 12px 40px 12px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: monospace;
+  transition: border-color 0.3s;
+}
+
+.api-key-input:focus {
+  outline: none;
+  border-color: #4A90E2;
+}
+
+.show-key-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+
+.show-key-btn:hover {
+  opacity: 1;
+}
+
+.save-button {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.save-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+}
+
+.save-button:active {
+  transform: translateY(0);
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.help-text {
+  margin-top: 15px;
+  font-size: 13px;
+  color: #666;
+}
+
+.help-text a {
+  color: #4A90E2;
+  text-decoration: none;
+}
+
+.help-text a:hover {
+  text-decoration: underline;
+}
+
+.settings-link {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.text-button {
+  background: none;
+  border: none;
+  color: #4A90E2;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 5px;
+}
+
+.text-button:hover {
+  color: #357ABD;
+}

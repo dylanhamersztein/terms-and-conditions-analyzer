@@ -36,18 +36,20 @@ A browser extension that uses AI to automatically find, analyze, and summarize T
 
 ### OpenAI API Key
 
-Before using the extension, you need to configure your OpenAI API key:
+The extension requires an OpenAI API key to function. On first use, you'll be prompted to enter your API key:
 
-1. Open the file `popup.js` in a text editor
-2. Find the line: `const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE';`
-3. Replace `YOUR_OPENAI_API_KEY_HERE` with your actual OpenAI API key
-4. Save the file and reload the extension
+1. Click the extension icon in your browser toolbar
+2. Enter your OpenAI API key in the setup screen
+3. Click "Save API Key"
+4. Your key is stored securely in your browser's local storage
 
 To get an OpenAI API key:
 1. Go to [platform.openai.com](https://platform.openai.com/)
 2. Sign up or log in
 3. Navigate to API Keys section
 4. Create a new API key
+
+**Security Note**: Your API key is stored locally in your browser using the browser's storage API and is never transmitted to any server other than OpenAI's API.
 
 ## Usage
 
@@ -86,33 +88,48 @@ terms-and-conditions-analyzer/
 The extension requires the following permissions:
 - `activeTab`: To access the current webpage
 - `scripting`: To inject the content script that extracts page content
+- `storage`: To securely store your OpenAI API key locally
 - `https://api.openai.com/*`: To call the OpenAI API
 - `<all_urls>`: To access content on any website (required for reading page content)
 
+### Cross-Browser Compatibility
+
+The extension uses browser-agnostic APIs for maximum compatibility:
+- Works with Chrome, Edge, Firefox, and other modern browsers
+- Automatically detects and uses the appropriate browser API (`browser` or `chrome`)
+- Manifest V3 compliant
+
 ### How It Works
 
-1. **Content Script Injection**: When you click analyze, `content.js` is injected into the active tab
-2. **DOM Extraction**: The script extracts the page's DOM content (HTML and text), removing scripts and styles
-3. **AI Processing**: The entire page content is sent to OpenAI's GPT-3.5-turbo model with instructions to:
+1. **API Key Setup**: On first use, you enter your OpenAI API key which is stored securely in browser local storage
+2. **Content Script Injection**: When you click analyze, `content.js` is injected into the active tab
+3. **DOM Extraction**: The script extracts the page's DOM content (HTML and text), removing scripts and styles
+4. **AI Processing**: The **entire page content** is sent to OpenAI's GPT-3.5-turbo model with instructions to:
    - Find and extract Terms and Conditions from the page
    - Analyze the T&C content for concerning clauses
    - Generate a summary and trustworthiness score
-4. **Result Display**: The JSON response from OpenAI is parsed and displayed in the popup
+5. **Result Display**: The JSON response from OpenAI is parsed and displayed in the popup
 
-**Key Advantage**: The AI model handles both T&C detection and analysis, making it more flexible and accurate at finding T&C in various formats and locations.
+**Key Advantages**: 
+- The AI model handles both T&C detection and analysis
+- No content truncation - full page content is analyzed
+- Secure API key storage in browser local storage
 
 ### Limitations
 
 - **AI-Dependent**: T&C detection relies entirely on the AI model's ability to find T&C within page content
-- **Token Limits**: Very long pages are truncated to ~12,000 characters
 - **API Costs**: Each analysis uses OpenAI API credits
 - **Detection Accuracy**: The AI model determines what constitutes T&C, which may vary in accuracy
+- **Token Limits**: OpenAI has token limits, but the extension sends full page content for best results
 
 ## Privacy
 
 This extension:
 - Does NOT collect or store any user data
-- Sends page content to OpenAI for T&C extraction and analysis
+- Stores your OpenAI API key locally in your browser's secure storage
+- Only sends page content to OpenAI for T&C extraction and analysis
+- API key is never transmitted to any server other than OpenAI
+- All processing happens between your browser and OpenAI's servers
 - Requires your own OpenAI API key
 - All processing happens between your browser and OpenAI's servers
 

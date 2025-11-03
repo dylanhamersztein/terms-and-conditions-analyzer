@@ -1,15 +1,24 @@
 // ============================================
 // CONFIGURATION
 // ============================================
-// TODO: Replace with your own OpenAI API key
-// NOTE: For production use, consider implementing secure storage using chrome.storage.sync
-// to allow users to input their API key through the extension's settings UI
-const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE';
 const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+const API_KEY_STORAGE_KEY = 'openai_api_key';
+
+// ============================================
+// CROSS-BROWSER API COMPATIBILITY
+// ============================================
+// Use browser API if available (Firefox), otherwise use chrome API
+const browserAPI = typeof browser !== 'undefined' ? browser : chrome;
 
 // ============================================
 // DOM ELEMENTS
 // ============================================
+const setupScreen = document.getElementById('setup-screen');
+const mainScreen = document.getElementById('main-screen');
+const apiKeyInput = document.getElementById('api-key-input');
+const saveKeyBtn = document.getElementById('save-key-btn');
+const showKeyBtn = document.getElementById('show-key-btn');
+const changeKeyBtn = document.getElementById('change-key-btn');
 const analyzeBtn = document.getElementById('analyze-btn');
 const loadingDiv = document.getElementById('loading');
 const errorDiv = document.getElementById('error');
@@ -17,6 +26,79 @@ const resultsDiv = document.getElementById('results');
 const summaryContent = document.getElementById('summary-content');
 const analysisContent = document.getElementById('analysis-content');
 const scoreContent = document.getElementById('score-content');
+
+// ============================================
+// API KEY MANAGEMENT
+// ============================================
+
+/**
+ * Get API key from secure storage
+ */
+async function getApiKey() {
+  try {
+    const result = await browserAPI.storage.local.get(API_KEY_STORAGE_KEY);
+    return result[API_KEY_STORAGE_KEY] || null;
+  } catch (error) {
+    console.error('Error retrieving API key:', error);
+    return null;
+  }
+}
+
+/**
+ * Save API key to secure storage
+ */
+async function saveApiKey(apiKey) {
+  try {
+    await browserAPI.storage.local.set({ [API_KEY_STORAGE_KEY]: apiKey });
+    return true;
+  } catch (error) {
+    console.error('Error saving API key:', error);
+    return false;
+  }
+}
+
+/**
+ * Clear API key from storage
+ */
+async function clearApiKey() {
+  try {
+    await browserAPI.storage.local.remove(API_KEY_STORAGE_KEY);
+    return true;
+  } catch (error) {
+    console.error('Error clearing API key:', error);
+    return false;
+  }
+}
+
+/**
+ * Check if API key exists and show appropriate screen
+ */
+async function checkApiKeyAndShowScreen() {
+  const apiKey = await getApiKey();
+  if (apiKey) {
+    showMainScreen();
+  } else {
+    showSetupScreen();
+  }
+}
+
+/**
+ * Show setup screen
+ */
+function showSetupScreen() {
+  setupScreen.style.display = 'block';
+  mainScreen.style.display = 'none';
+  apiKeyInput.value = '';
+  apiKeyInput.focus();
+}
+
+/**
+ * Show main screen
+ */
+function showMainScreen() {
+  setupScreen.style.display = 'none';
+  mainScreen.style.display = 'block';
+}
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -51,15 +133,6 @@ function showResults() {
 }
 
 /**
- * Convert HTML to plain text
- */
-function htmlToPlainText(html) {
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  return tempDiv.textContent || tempDiv.innerText || '';
-}
-
-/**
  * Get rating class for styling
  */
 function getRatingClass(rating) {
@@ -80,10 +153,10 @@ function getRatingClass(rating) {
  * Extract page DOM content
  */
 async function extractPageDOM() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
   
   try {
-    const results = await chrome.scripting.executeScript({
+    const results = await browserAPI.scripting.executeScript({
       target: { tabId: tab.id },
       files: ['content.js']
     });
@@ -101,18 +174,15 @@ async function extractPageDOM() {
 /**
  * Call OpenAI API to analyze T&C from page DOM
  */
-async function analyzeWithAI(pageData) {
+async function analyzeWithAI(pageData, apiKey) {
   // Validate API key
-  if (!OPENAI_API_KEY || OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
-    throw new Error('Please set your OpenAI API key in popup.js');
+  if (!apiKey) {
+    throw new Error('No API key found. Please configure your OpenAI API key.');
   }
   
-  // Use text version for analysis (more token-efficient than HTML)
-  // Truncate if too long (OpenAI has token limits)
-  const maxLength = 12000; // Approximately 3000-4000 tokens depending on complexity
-  const pageContent = pageData.text.length > maxLength 
-    ? pageData.text.substring(0, maxLength) + '...' 
-    : pageData.text;
+  // NO TRUNCATION - Send full content to AI
+  // The AI model will handle the content appropriately
+  const pageContent = pageData.text;
   
   const prompt = `You are analyzing a webpage to find and evaluate Terms and Conditions. 
 
@@ -163,7 +233,7 @@ Rating: "Excellent", "Good", "Fair", "Poor", or "Very Poor"`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
@@ -184,6 +254,9 @@ Rating: "Excellent", "Good", "Fair", "Poor", or "Very Poor"`;
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        throw new Error('Invalid API key. Please check your OpenAI API key and try again.');
+      }
       throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
     }
     
@@ -268,6 +341,15 @@ async function analyzeTermsAndConditions() {
   try {
     showLoading();
     
+    // Get API key
+    const apiKey = await getApiKey();
+    if (!apiKey) {
+      hideLoading();
+      showError('API key not configured. Please set your OpenAI API key.');
+      showSetupScreen();
+      return;
+    }
+    
     // Step 1: Extract page DOM content
     const pageData = await extractPageDOM();
     if (!pageData || !pageData.text) {
@@ -288,10 +370,10 @@ async function analyzeTermsAndConditions() {
       return;
     }
     
-    console.log('Page content length:', pageData.text.length);
+    console.log('Page content length (NO TRUNCATION):', pageData.text.length);
     
-    // Step 3: Send to AI for T&C extraction and analysis
-    const results = await analyzeWithAI(pageData);
+    // Step 3: Send FULL CONTENT to AI for T&C extraction and analysis
+    const results = await analyzeWithAI(pageData, apiKey);
     
     console.log('AI analysis results:', results);
     
@@ -307,7 +389,65 @@ async function analyzeTermsAndConditions() {
 // ============================================
 // EVENT LISTENERS
 // ============================================
+
+// Save API key
+saveKeyBtn.addEventListener('click', async () => {
+  const apiKey = apiKeyInput.value.trim();
+  if (!apiKey) {
+    alert('Please enter an API key.');
+    return;
+  }
+  
+  if (!apiKey.startsWith('sk-')) {
+    alert('Invalid API key format. OpenAI API keys start with "sk-".');
+    return;
+  }
+  
+  saveKeyBtn.disabled = true;
+  saveKeyBtn.textContent = 'Saving...';
+  
+  const success = await saveApiKey(apiKey);
+  if (success) {
+    showMainScreen();
+  } else {
+    alert('Failed to save API key. Please try again.');
+  }
+  
+  saveKeyBtn.disabled = false;
+  saveKeyBtn.textContent = 'Save API Key';
+});
+
+// Show/hide API key
+showKeyBtn.addEventListener('click', () => {
+  if (apiKeyInput.type === 'password') {
+    apiKeyInput.type = 'text';
+    showKeyBtn.textContent = '🙈';
+  } else {
+    apiKeyInput.type = 'password';
+    showKeyBtn.textContent = '👁️';
+  }
+});
+
+// Change API key
+changeKeyBtn.addEventListener('click', async () => {
+  const confirm = window.confirm('Are you sure you want to change your API key?');
+  if (confirm) {
+    showSetupScreen();
+  }
+});
+
+// Analyze button
 analyzeBtn.addEventListener('click', analyzeTermsAndConditions);
 
-// Initial state
-hideLoading();
+// Enter key in API key input
+apiKeyInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    saveKeyBtn.click();
+  }
+});
+
+// ============================================
+// INITIALIZATION
+// ============================================
+// Check for API key on load
+checkApiKeyAndShowScreen();

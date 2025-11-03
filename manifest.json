@@ -5,7 +5,8 @@
   "description": "Automatically find and analyze Terms and Conditions using AI to provide summaries and trustworthiness ratings",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "https://api.openai.com/*",
