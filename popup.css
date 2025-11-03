@@ -9,6 +9,8 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-width: 420px;
   max-width: 500px;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .container {
@@ -234,11 +236,9 @@ main {
 .score-number {
   font-size: 64px;
   font-weight: 900;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: white;
   line-height: 1;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .score-details {
@@ -299,8 +299,6 @@ main {
   background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
   border-radius: 12px;
   margin-bottom: 12px;
-  padding-left: 44px;
-  position: relative;
   transition: all 0.3s ease;
 }
 
@@ -311,14 +309,6 @@ main {
 
 .analysis-list li:last-child {
   margin-bottom: 0;
-}
-
-.analysis-list li:before {
-  content: "⚠️";
-  position: absolute;
-  left: 14px;
-  top: 14px;
-  font-size: 18px;
 }
 
 /* Footer */
