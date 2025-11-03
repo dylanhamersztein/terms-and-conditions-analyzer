@@ -77,9 +77,9 @@ function getRatingClass(rating) {
 // ============================================
 
 /**
- * Find T&C text on the current page
+ * Extract page DOM content
  */
-async function findTCText() {
+async function extractPageDOM() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   
   try {
@@ -99,24 +99,38 @@ async function findTCText() {
 }
 
 /**
- * Call OpenAI API to analyze T&C
+ * Call OpenAI API to analyze T&C from page DOM
  */
-async function analyzeWithAI(tcText) {
+async function analyzeWithAI(pageData) {
   // Validate API key
   if (!OPENAI_API_KEY || OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
     throw new Error('Please set your OpenAI API key in popup.js');
   }
   
-  // Truncate text if too long (OpenAI has token limits)
-  // Note: This is a rough approximation. Actual token count varies based on content.
+  // Use text version for analysis (more token-efficient than HTML)
+  // Truncate if too long (OpenAI has token limits)
   const maxLength = 12000; // Approximately 3000-4000 tokens depending on complexity
-  const truncatedText = tcText.length > maxLength ? tcText.substring(0, maxLength) + '...' : tcText;
+  const pageContent = pageData.text.length > maxLength 
+    ? pageData.text.substring(0, maxLength) + '...' 
+    : pageData.text;
   
-  const prompt = `You are analyzing Terms and Conditions text. Please analyze the following Terms and Conditions and provide your response in STRICT JSON format.
+  const prompt = `You are analyzing a webpage to find and evaluate Terms and Conditions. 
 
-The JSON response MUST have this exact structure:
+I'm providing you with the text content from a webpage. Your task is to:
+1. FIND and EXTRACT the Terms and Conditions text from this page content
+2. ANALYZE the Terms and Conditions you found
+3. Provide a comprehensive evaluation
+
+Page URL: ${pageData.url}
+Page Title: ${pageData.title}
+
+Page Content:
+${pageContent}
+
+Please respond in STRICT JSON format with this exact structure:
 {
-  "summary": "A brief, easy-to-understand summary in 150 words or less",
+  "found": true,
+  "summary": "A brief, easy-to-understand summary of the T&C in 150 words or less",
   "analysis": [
     "Description of concerning clause 1",
     "Description of concerning clause 2"
@@ -125,18 +139,24 @@ The JSON response MUST have this exact structure:
   "rating": "Good"
 }
 
-Please analyze for these concerning clauses:
+If you cannot find Terms and Conditions on this page, respond with:
+{
+  "found": false,
+  "summary": "No Terms and Conditions found on this page.",
+  "analysis": [],
+  "score": 0,
+  "rating": "N/A"
+}
+
+When analyzing, look for these concerning clauses:
 1. User data sharing with third parties
 2. Automatic subscription renewals
 3. User content ownership (does the company claim ownership of user content?)
 4. Liability limitations (is the company limiting their liability excessively?)
 5. Mandatory arbitration (are users forced into arbitration instead of court?)
 
-Provide a Trustworthiness Score from 1-100 (where 100 is most trustworthy).
-Rating must be one of: "Excellent", "Good", "Fair", "Poor", or "Very Poor"
-
-Terms and Conditions text:
-${truncatedText}`;
+Trustworthiness Score: 1-100 (where 100 is most trustworthy)
+Rating: "Excellent", "Good", "Fair", "Poor", or "Very Poor"`;
 
   try {
     const response = await fetch(OPENAI_API_ENDPOINT, {
@@ -150,7 +170,7 @@ ${truncatedText}`;
         messages: [
           {
             role: 'system',
-            content: 'You are a legal analyst specializing in Terms and Conditions. Always respond with valid JSON only.'
+            content: 'You are a legal analyst specializing in finding and analyzing Terms and Conditions from webpages. Always respond with valid JSON only.'
           },
           {
             role: 'user',
@@ -181,6 +201,11 @@ ${truncatedText}`;
       }
       
       const parsedResult = JSON.parse(jsonContent);
+      
+      // Check if T&C was found
+      if (parsedResult.found === false) {
+        throw new Error('No Terms and Conditions found on this page. Please navigate to a page that displays Terms and Conditions.');
+      }
       
       // Validate the response structure
       if (!parsedResult.summary || !parsedResult.analysis || 
@@ -243,30 +268,30 @@ async function analyzeTermsAndConditions() {
   try {
     showLoading();
     
-    // Step 1: Find T&C text on current page
-    const tcData = await findTCText();
-    if (!tcData || !tcData.text) {
-      showError('Could not find Terms and Conditions text on this page. Please navigate to a page that displays Terms and Conditions (e.g., in a modal or on the page itself).');
+    // Step 1: Extract page DOM content
+    const pageData = await extractPageDOM();
+    if (!pageData || !pageData.text) {
+      showError('Could not extract content from this page. Please make sure you have permission to access the page.');
       return;
     }
     
-    console.log('Found T&C text:', {
-      source: tcData.source,
-      elementType: tcData.elementType,
-      score: tcData.score,
-      length: tcData.text.length
+    console.log('Extracted page data:', {
+      url: pageData.url,
+      title: pageData.title,
+      textLength: pageData.text.length,
+      htmlLength: pageData.html.length
     });
     
     // Step 2: Validate content
-    if (tcData.text.trim().length < 100) {
-      showError('Could not extract meaningful Terms and Conditions content from this page.');
+    if (pageData.text.trim().length < 100) {
+      showError('Could not extract meaningful content from this page.');
       return;
     }
     
-    console.log('T&C content length:', tcData.text.length);
+    console.log('Page content length:', pageData.text.length);
     
-    // Step 3: Analyze with AI
-    const results = await analyzeWithAI(tcData.text);
+    // Step 3: Send to AI for T&C extraction and analysis
+    const results = await analyzeWithAI(pageData);
     
     console.log('AI analysis results:', results);
     
