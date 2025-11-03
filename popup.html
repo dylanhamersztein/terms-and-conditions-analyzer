@@ -9,13 +9,21 @@
 <body>
   <div class="container">
     <header>
-      <h1>AI T&C Analyzer</h1>
+      <div class="header-nav">
+        <h1>AI T&C Analyzer</h1>
+        <button id="settings-icon-btn" class="icon-button" title="Settings">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+          </svg>
+        </button>
+      </div>
       <p class="subtitle">Analyze Terms and Conditions with AI</p>
     </header>
     
     <!-- API Key Setup Screen -->
     <div id="setup-screen" class="setup-screen" style="display: none;">
       <div class="setup-content">
+        <div class="setup-icon">🔐</div>
         <h2>Welcome!</h2>
         <p class="setup-text">To use this extension, you need to provide your OpenAI API key.</p>
         <p class="setup-text small">Your API key will be stored securely in your browser and never shared.</p>
@@ -37,35 +45,33 @@
     <!-- Main Analysis Screen -->
     <main id="main-screen">
       <button id="analyze-btn" class="analyze-button">
-        Analyze Terms and Conditions
+        <span class="button-icon">✨</span>
+        <span>Analyze Terms and Conditions</span>
       </button>
       
       <div id="loading" class="loading" style="display: none;">
         <div class="spinner"></div>
         <p>Analyzing Terms and Conditions...</p>
+        <p class="loading-subtext">This may take a moment</p>
       </div>
       
       <div id="error" class="error" style="display: none;"></div>
       
       <div id="results" class="results" style="display: none;">
-        <section class="result-section">
-          <h2>Trustworthiness Score</h2>
+        <section class="result-section score-section">
+          <h2>🎯 Trustworthiness Score</h2>
           <div id="score-content" class="score-display"></div>
         </section>
         
         <section class="result-section">
-          <h2>Summary</h2>
+          <h2>📝 Summary</h2>
           <div id="summary-content" class="summary-text"></div>
         </section>
         
         <section class="result-section">
-          <h2>Detailed Analysis</h2>
+          <h2>⚠️ Detailed Analysis</h2>
           <div id="analysis-content" class="analysis-list"></div>
         </section>
-      </div>
-      
-      <div class="settings-link">
-        <button id="change-key-btn" class="text-button">Change API Key</button>
       </div>
     </main>
     

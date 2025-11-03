@@ -3,6 +3,17 @@
 // ============================================
 const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 const API_KEY_STORAGE_KEY = 'openai_api_key';
+const MODEL_STORAGE_KEY = 'selected_model';
+const DEFAULT_MODEL = 'gpt-3.5-turbo';
+
+// Model token limits (context window sizes)
+const MODEL_LIMITS = {
+  'gpt-3.5-turbo': 16385,
+  'gpt-4': 8192,
+  'gpt-4-turbo': 128000,
+  'gpt-4o': 128000,
+  'gpt-4o-mini': 128000
+};
 
 // ============================================
 // CROSS-BROWSER API COMPATIBILITY
@@ -18,7 +29,7 @@ const mainScreen = document.getElementById('main-screen');
 const apiKeyInput = document.getElementById('api-key-input');
 const saveKeyBtn = document.getElementById('save-key-btn');
 const showKeyBtn = document.getElementById('show-key-btn');
-const changeKeyBtn = document.getElementById('change-key-btn');
+const settingsIconBtn = document.getElementById('settings-icon-btn');
 const analyzeBtn = document.getElementById('analyze-btn');
 const loadingDiv = document.getElementById('loading');
 const errorDiv = document.getElementById('error');
@@ -68,6 +79,36 @@ async function clearApiKey() {
     console.error('Error clearing API key:', error);
     return false;
   }
+}
+
+/**
+ * Get selected model from storage
+ */
+async function getSelectedModel() {
+  try {
+    const result = await browserAPI.storage.local.get(MODEL_STORAGE_KEY);
+    return result[MODEL_STORAGE_KEY] || DEFAULT_MODEL;
+  } catch (error) {
+    console.error('Error retrieving model:', error);
+    return DEFAULT_MODEL;
+  }
+}
+
+/**
+ * Truncate text based on model's token limit
+ * Rough approximation: 1 token ≈ 4 characters
+ */
+function truncateForModel(text, model) {
+  const tokenLimit = MODEL_LIMITS[model] || MODEL_LIMITS[DEFAULT_MODEL];
+  // Reserve tokens for the prompt and response (roughly 2000 tokens)
+  const availableTokens = tokenLimit - 2000;
+  const maxChars = availableTokens * 4; // Rough conversion
+  
+  if (text.length <= maxChars) {
+    return text;
+  }
+  
+  return text.substring(0, maxChars) + '\n\n[Content truncated due to length...]';
 }
 
 /**
@@ -174,15 +215,16 @@ async function extractPageDOM() {
 /**
  * Call OpenAI API to analyze T&C from page DOM
  */
-async function analyzeWithAI(pageData, apiKey) {
+async function analyzeWithAI(pageData, apiKey, model) {
   // Validate API key
   if (!apiKey) {
     throw new Error('No API key found. Please configure your OpenAI API key.');
   }
   
-  // NO TRUNCATION - Send full content to AI
-  // The AI model will handle the content appropriately
-  const pageContent = pageData.text;
+  // Truncate content based on model's token limit
+  const pageContent = truncateForModel(pageData.text, model);
+  
+  console.log(`Using model: ${model}, Content length: ${pageContent.length} characters`);
   
   const prompt = `You are analyzing a webpage to find and evaluate Terms and Conditions. 
 
@@ -236,7 +278,7 @@ Rating: "Excellent", "Good", "Fair", "Poor", or "Very Poor"`;
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: model,
         messages: [
           {
             role: 'system',
@@ -350,6 +392,9 @@ async function analyzeTermsAndConditions() {
       return;
     }
     
+    // Get selected model
+    const selectedModel = await getSelectedModel();
+    
     // Step 1: Extract page DOM content
     const pageData = await extractPageDOM();
     if (!pageData || !pageData.text) {
@@ -361,7 +406,8 @@ async function analyzeTermsAndConditions() {
       url: pageData.url,
       title: pageData.title,
       textLength: pageData.text.length,
-      htmlLength: pageData.html.length
+      htmlLength: pageData.html.length,
+      model: selectedModel
     });
     
     // Step 2: Validate content
@@ -370,10 +416,10 @@ async function analyzeTermsAndConditions() {
       return;
     }
     
-    console.log('Page content length (NO TRUNCATION):', pageData.text.length);
+    console.log('Using model:', selectedModel);
     
-    // Step 3: Send FULL CONTENT to AI for T&C extraction and analysis
-    const results = await analyzeWithAI(pageData, apiKey);
+    // Step 3: Send content to AI (truncated based on model limits) for T&C extraction and analysis
+    const results = await analyzeWithAI(pageData, apiKey, selectedModel);
     
     console.log('AI analysis results:', results);
     
@@ -428,12 +474,9 @@ showKeyBtn.addEventListener('click', () => {
   }
 });
 
-// Change API key
-changeKeyBtn.addEventListener('click', async () => {
-  const confirm = window.confirm('Are you sure you want to change your API key?');
-  if (confirm) {
-    showSetupScreen();
-  }
+// Settings button
+settingsIconBtn.addEventListener('click', () => {
+  window.location.href = 'settings.html';
 });
 
 // Analyze button
