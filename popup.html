@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI T&C Analyzer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-nav">
+        <h1>AI T&C Analyzer</h1>
+        <button id="settings-icon-btn" class="icon-button" title="Settings">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+          </svg>
+        </button>
+      </div>
+      <p class="subtitle">Analyze Terms and Conditions with AI</p>
+    </header>
+    
+    <!-- API Key Setup Screen -->
+    <div id="setup-screen" class="setup-screen" style="display: none;">
+      <div class="setup-content">
+        <div class="setup-icon">🔐</div>
+        <h2>Welcome!</h2>
+        <p class="setup-text">To use this extension, you need to provide your OpenAI API key.</p>
+        <p class="setup-text small">Your API key will be stored securely in your browser and never shared.</p>
+        
+        <div class="input-group">
+          <label for="api-key-input">OpenAI API Key:</label>
+          <input type="password" id="api-key-input" placeholder="sk-..." class="api-key-input">
+          <button id="show-key-btn" class="show-key-btn" type="button">👁️</button>
+        </div>
+        
+        <button id="save-key-btn" class="save-button">Save API Key</button>
+        
+        <div class="help-text">
+          <p>Don't have an API key? <a href="https://platform.openai.com/api-keys" target="_blank">Get one here</a></p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Analysis Screen -->
+    <main id="main-screen">
+      <button id="analyze-btn" class="analyze-button">
+        <span class="button-icon">✨</span>
+        <span>Analyze Terms and Conditions</span>
+      </button>
+      
+      <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Analyzing Terms and Conditions...</p>
+        <p class="loading-subtext">This may take a moment</p>
+      </div>
+      
+      <div id="error" class="error" style="display: none;"></div>
+      
+      <div id="results" class="results" style="display: none;">
+        <section class="result-section score-section">
+          <h2>🎯 Trustworthiness Score</h2>
+          <div id="score-content" class="score-display"></div>
+        </section>
+        
+        <section class="result-section">
+          <h2>📝 Summary</h2>
+          <div id="summary-content" class="summary-text"></div>
+        </section>
+        
+        <section class="result-section">
+          <h2>⚠️ Detailed Analysis</h2>
+          <div id="analysis-content" class="analysis-list"></div>
+        </section>
+      </div>
+    </main>
+    
+    <footer>
+      <p class="footer-text">Powered by OpenAI</p>
+    </footer>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
